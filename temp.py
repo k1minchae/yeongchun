@@ -163,3 +163,51 @@ for i in range(1, len(xy_only)):
     folium.Marker([xy_only[i]["y"], xy_only[i]["x"]]).add_to(m)
 
 m
+
+
+"""
+#######
+키워드로 검색하는 카카오 api
+영천 시 test
+
+"""
+
+import pandas as pd
+import requests
+import folium
+
+# df 불러오기 / 경상북도 영천시_ 행사 및 축제
+# csv 보니까 인코딩은 필수
+df = pd.read_csv(
+    "/Users/parkhansl/Desktop/project_ych/data/경상북도 영천시_행사및축제_20221128.csv",
+    encoding="euc-kr",
+)
+
+# df 장소 훑어보고 unique 뽑기 // 이건 어케할지 정해야 될 듯
+area = df.장소명
+area_uniq_list = area.unique()
+
+
+# hansl의 카카오 api 키
+rest_api_key = "a87248694cb79257a8289c04f92d5b35"
+# 지도 상 영천시 중앙값? 대충 찍음
+m = folium.Map(location=[35.968251023117105, 128.94150638720242], zoom_start=15)
+
+# 마커 경향 확인을 위해 값을 조금만 뽑아서 위와 동일한 과정 진행
+
+for i in area_uniq_list[:50]:
+    print(i)
+    url = "https://dapi.kakao.com/v2/local/search/keyword.json?query={}".format(i)
+    headers = {"Authorization": "KakaoAK " + rest_api_key}
+    places = requests.get(url, headers=headers).json()["documents"]
+
+    xy_only = [{"x": place["x"], "y": place["y"]} for place in places]
+
+    print(len(xy_only))
+
+    count += 1
+
+    for i in range(1, len(xy_only)):
+        folium.Marker([xy_only[i]["y"], xy_only[i]["x"]]).add_to(m)
+
+print(m)
