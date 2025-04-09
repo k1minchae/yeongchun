@@ -291,7 +291,11 @@ plt.tight_layout()
 plt.show()
 
 
-
+# 군집화 점수 판별
+from sklearn.metrics import silhouette_score
+score = silhouette_score(X_scaled, kmeans.labels_)
+# 0. 5 ~0.7사이: 양호
+print("Silhouette Score:", score)
 
 
 ##############################################################
