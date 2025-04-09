@@ -366,3 +366,47 @@ PC2도 낮은 수준이므로, 이벤트성 자극 요소 부족
 이에 따라 지역 축제 및 체험형 콘텐츠 개발, 소규모 숙박 인프라 확충을 통해 군집 이동을 유도하고, 
 경북 내 관광 거점 도시들과의 연계 전략을 강화해야 할 필요가 있습니다.
 '''
+
+
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# 두 지역 자원 수를 비교하는 함수
+def count_resources_by_city(city_name):
+    return {
+        '음식점': food_data[food_data['지역명'] == city_name].shape[0],
+        '관광/휴양': travel_rest_data[travel_rest_data['지역명'] == city_name].shape[0],
+        '문화시설': culture_data[culture_data['지역명'] == city_name].shape[0],
+        '숙박': hotel_data[hotel_data['지역명'] == city_name].shape[0],
+        '축제': festival_data[festival_data['지역명'] == city_name].shape[0]
+    }
+
+# 두 도시의 자원 데이터 수집
+yeongcheon_resources = count_resources_by_city('영천시')
+yeongju_resources = count_resources_by_city('영주시')
+
+# 데이터프레임으로 변환
+compare_df = pd.DataFrame([yeongcheon_resources, yeongju_resources], index=['영천시', '영주시'])
+
+# 3. 자원별 비율 계산 (열 기준)
+percent_df = compare_df.divide(compare_df.sum(axis=0), axis=1) * 100
+
+# 4. 자원별 % 차이 계산
+diff_df = abs(percent_df.loc['영천시'] - percent_df.loc['영주시'])
+
+# 5. % 차이 출력
+print("자원별 보유 비율 차이 (단위: %):")
+print(diff_df.round(2))
+
+# 6. 누적 비율 막대그래프 시각화
+percent_df.T.plot(kind='bar', stacked=True, figsize=(10, 6), color=['skyblue', 'lightcoral'])
+plt.title("영천시 vs 영주시 관광 자원 비율 비교 (누적 비율)")
+plt.ylabel("비율 (%)")
+plt.xticks(rotation=45)
+plt.legend(title="도시")
+plt.tight_layout()
+plt.show()
+
+# 문화시설/숙박/축제 면에서 부족하다.
