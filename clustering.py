@@ -182,7 +182,7 @@ travel_rest_data.groupby('지역명').size()
 culture_data.groupby('지역명').size()
 festival_data.groupby('지역명').size()
 
-
+festival_data[festival_data['지역명']=='영천시']
 
 
 
@@ -249,11 +249,20 @@ print(pca.components_)
 cluster_names = {
     0: '전통 관광지',
     1: '소비 관광지',
-    2: '체류형 관광지',
-    3: '문화 관광지'
+    2: '문화 관광지',
+    3: '체류형 관광지'
 }
 
+
 plt.figure(figsize=(10, 6))
+# 영천시만 강조
+yeongcheon = region_data[region_data['지역명'] == '영천시']
+plt.scatter(
+    yeongcheon['PC1'], yeongcheon['PC2'],
+    s=300,  # 크기 키우기
+    edgecolors='red', facecolors='none', linewidths=3,
+    label='영천시'
+)
 sns.scatterplot(
     data=region_data,
     x='PC1', y='PC2',
@@ -272,8 +281,11 @@ for i in range(len(region_data)):
     )
 
 plt.title("경상북도 지역 관광 군집화 결과")
-plt.xlabel('PC1')
-plt.ylabel('PC2')
+plt.axhline(1, color='gray', linestyle='--', linewidth=0.8)
+plt.axvline(0, color='gray', linestyle='--', linewidth=0.8)
+plt.axvline(4, color='gray', linestyle='--', linewidth=0.8)
+plt.xlabel('관광지 규모')
+plt.ylabel('전통형 vs 소비형')
 plt.legend(title="관광 유형")
 plt.tight_layout()
 plt.show()
