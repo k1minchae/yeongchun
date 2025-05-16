@@ -128,7 +128,7 @@ for cb in checkboxes:
 
 # 7. 화면 표시
 layout = widgets.HBox([
-    widgets.VBox([widgets.Label("표시할 주요품목을 선택하세요:"), checkbox_group]),
+    widgets.VBox([widgets.Label("주요품목을 선택하세요:"), checkbox_group]),
     output
 ])
 display(layout)
