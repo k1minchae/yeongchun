@@ -54,87 +54,36 @@ fig.show()
 nongsan = pd.read_csv('C:/Users/USER/Desktop/TIL/프로젝트/yeongchun/dashboard/asset/data/유통센터위도경도.csv', encoding='cp949')
 
 
-import plotly.graph_objects as go
-# 1. 읍면동 SHP 파일 읽기 및 좌표계 변환
-emd = gpd.read_file("C:/Users/USER/Desktop/TIL/프로젝트/yeongchun/dashboard/asset/data/map/영천시읍면동.shp")
-emd = emd.to_crs(epsg=4326)
-
-# 2. 유통센터 데이터 불러오기
-nongsan = pd.read_csv("C:/Users/USER/Desktop/TIL/프로젝트/yeongchun/dashboard/asset/data/유통센터위도경도.csv", encoding='cp949')
-
-# 3. Mapbox 토큰 설정 (공용 토큰 또는 개인 토큰 필요 시 아래 주석 해제)
-# px.set_mapbox_access_token('your_mapbox_token_here')
-
-# 4. Choropleth (읍면동 경계)
-fig = go.Figure(go.Choroplethmapbox(
-    geojson=emd.__geo_interface__,  # GeoJSON 변환
-    locations=emd.index,
-    z=[1]*len(emd),  # 색상은 동일하게
-    colorscale="Greys",
-    showscale=False,
-    marker_opacity=0.3,
-    marker_line_width=1
-))
-
-# 5. 유통센터 점 찍기 (클릭 시 이름 표시)
-fig.add_trace(go.Scattermapbox(
-    lat=nongsan["위도"],
-    lon=nongsan["경도"],
-    mode='markers',
-    marker=go.scattermapbox.Marker(size=10, color='red'),
-    text=nongsan["주요품목"],            # hover 시 보이게 할 텍스트
-    hovertemplate="<b>센터명:</b> %{customdata[0]}<br>" + 
-                  "<b>주요품목:</b> %{text}<extra></extra>",
-    customdata=nongsan[["사업장명"]].values  # %{customdata[0]} → 센터명
-))
-
-# 6. 레이아웃 설정
-fig.update_layout(
-    mapbox_style="carto-positron",  # 또는 "open-street-map", "carto-darkmatter"
-    mapbox_zoom=9.5,
-    mapbox_center={"lat": nongsan["위도"].mean(), "lon": nongsan["경도"].mean()},
-    margin={"r":0, "t":50, "l":0, "b":0},
-    title="영천시 농산물 유통센터 위치"
-)
-
-fig.show()
-
-
-
-
-# dropbox 연동
+# 유통센터 시각화
 import geopandas as gpd
 import pandas as pd
 import plotly.graph_objects as go
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, clear_output
 
 # 1. 데이터 불러오기
 emd = gpd.read_file("C:/Users/USER/Desktop/TIL/프로젝트/yeongchun/dashboard/asset/data/map/영천시읍면동.shp").to_crs(epsg=4326)
 nongsan = pd.read_csv("C:/Users/USER/Desktop/TIL/프로젝트/yeongchun/dashboard/asset/data/유통센터위도경도.csv", encoding='cp949')
 
-# 2. 주요품목 목록
+# 2. 작물 목록 및 색상 팔레트
 items = sorted(nongsan["주요품목"].dropna().unique().tolist())
+color_palette = px.colors.qualitative.Plotly  # 색상 리스트
+color_map = {item: color_palette[i % len(color_palette)] for i, item in enumerate(items)}
 
 # 3. 체크박스 생성
-checkboxes = [widgets.Checkbox(value=False, description=item) for item in items]
-checkbox_group = widgets.VBox(checkboxes)
-
-# 4. 버튼 추가
-button = widgets.Button(description="지도 업데이트")
+checkboxes = [
+    widgets.Checkbox(value=False, description=item, layout=widgets.Layout(width='200px'))
+    for item in items
+]
+checkbox_group = widgets.VBox(checkboxes, layout=widgets.Layout(width='220px'))
 output = widgets.Output()
 
-# 5. 버튼 클릭 시 지도 업데이트 함수
-def on_button_click(b):
-    output.clear_output()
+# 4. 지도 업데이트 함수
+def update_map(change=None):
+    output.clear_output(wait=True)
     selected_items = [cb.description for cb in checkboxes if cb.value]
     filtered = nongsan[nongsan["주요품목"].isin(selected_items)]
     
-    if filtered.empty:
-        with output:
-            print("선택된 품목에 해당하는 유통센터가 없습니다.")
-        return
-
     fig = go.Figure(go.Choroplethmapbox(
         geojson=emd.__geo_interface__,
         locations=emd.index,
@@ -145,28 +94,44 @@ def on_button_click(b):
         marker_line_width=1
     ))
 
-    fig.add_trace(go.Scattermapbox(
-        lat=filtered["위도"],
-        lon=filtered["경도"],
-        mode='markers',
-        marker=go.scattermapbox.Marker(size=10, color='red'),
-        text=filtered["주요품목"],
-        hovertemplate="<b>센터명:</b> %{customdata[0]}<br><b>주요품목:</b> %{text}<extra></extra>",
-        customdata=filtered[["사업장명"]].values
-    ))
+    # 5. 작물별로 마커 색상 다르게 추가
+    for item in selected_items:
+        sub_df = filtered[filtered["주요품목"] == item]
+        fig.add_trace(go.Scattermapbox(
+            lat=sub_df["위도"],
+            lon=sub_df["경도"],
+            mode='markers',
+            name=item,  # 범례 이름
+            marker=go.scattermapbox.Marker(size=10, color=color_map[item]),
+            text=sub_df["주요품목"],
+            hovertemplate="<b>센터명:</b> %{customdata[0]}<br><b>주요품목:</b> %{text}<extra></extra>",
+            customdata=sub_df[["사업장명"]].values,
+            showlegend=True
+        ))
 
     fig.update_layout(
         mapbox_style="carto-positron",
         mapbox_zoom=9.5,
         mapbox_center={"lat": nongsan["위도"].mean(), "lon": nongsan["경도"].mean()},
         margin={"r":0, "t":50, "l":0, "b":0},
-        title="영천시 농산물 유통센터 - 선택된 주요품목"
+        height=600,
+        title="영천시 농산물 유통센터 - 선택된 주요품목",
+        legend_title="주요품목"
     )
 
     with output:
         fig.show()
 
-button.on_click(on_button_click)
+# 6. 체크박스에 이벤트 연결
+for cb in checkboxes:
+    cb.observe(update_map, 'value')
 
-# 6. 전체 위젯 출력
-display(widgets.Label("표시할 주요품목을 선택하세요:"), checkbox_group, button, output)
+# 7. 화면 표시
+layout = widgets.HBox([
+    widgets.VBox([widgets.Label("표시할 주요품목을 선택하세요:"), checkbox_group]),
+    output
+])
+display(layout)
+
+# 8. 초기 지도 표시
+update_map()
