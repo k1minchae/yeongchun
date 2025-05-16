@@ -4,11 +4,39 @@ from faicons import icon_svg
 # Import data from shared.py
 from shared import app_dir, df
 
+from functools import partial
 from shiny import reactive
 from shiny.express import input, render, ui
+from shiny.ui import page_navbar
 
-ui.page_opts(title="Penguins dashboard", fillable=True)
 
+from functools import partial
+
+from shiny.express import ui
+from shiny.ui import page_navbar
+
+ui.page_opts(
+    title="App with navbar",  
+    page_fn=partial(page_navbar, id="page"),  
+)
+
+with ui.nav_panel("A"):  
+    "Page A content"
+
+with ui.nav_panel("B"):  
+    "Page B content"
+
+with ui.nav_panel("C"):  
+    "Page C content"
+# with ui.navset_tab():
+#     with ui.nav_panel("A"):
+#         ui.h2("Page A content")
+
+#     with ui.nav_panel("B"):
+#         ui.h2("Page B content")
+
+#     with ui.nav_panel("C"):
+#         ui.h2("Page C content")
 
 with ui.sidebar(title="Filter controls"):
     ui.input_slider("mass", "Mass", 2000, 6000, 6000)
